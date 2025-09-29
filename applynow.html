@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Apply Now | Student Forge (Mock OTP)</title>
+  <link rel="icon" href="assets/temp_logo.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <style>
+    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; background:#f3f4f6; color:#111827; }
+    .card { background:white; max-width:760px; margin:32px auto; padding:24px; border-radius:12px; box-shadow:0 6px 24px rgba(15,23,42,.06); }
+    .field { margin-bottom:12px; }
+    input, select, textarea { width:100%; padding:10px 12px; border-radius:8px; border:1px solid #e5e7eb; background:#fff; }
+    button { padding:10px 14px; border-radius:8px; cursor:pointer; border:0; }
+    .btn-primary { background:#003153; color:white; }
+    .btn-success { background:#16a34a; color:white; }
+    .btn-muted { background:#6b7280; color:white; }
+    .otp-box { display:flex; gap:8px; align-items:center; margin-top:8px; }
+    .small { font-size:13px; color:#6b7280; }
+    .hidden { display:none; }
+    .badge { display:inline-block; padding:6px 8px; border-radius:999px; background:#ecfeff; color:#0369a1; font-weight:600; font-size:13px; }
+
+
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+  <div id="nav-placeholder"></div>
+ <div class="max-w-lg mx-auto mt-12 p-8 bg-white shadow-lg rounded-xl border border-gray-200">
+  <h1 class="text-2xl font-bold mb-2 text-gray-900">Enroll to Student Forge</h1>
+  <p class="text-gray-600 mb-6">Fill details below → verify OTP (testing) → proceed to payment.</p>
+
+  <form id="applyForm" onsubmit="return false;" class="space-y-4">
+    <!-- Course -->
+    <div>
+      <label class="block text-gray-700 font-medium mb-1">Course (from previous page)</label>
+      <input id="courseName" type="text" placeholder="Course name" readonly
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-100 text-gray-700" />
+    </div>
+
+    <!-- Name -->
+    <div>
+      <label class="block text-gray-700 font-medium mb-1">Name</label>
+      <input id="name" name="name" type="text" placeholder="Full name" required
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+    </div>
+
+    <!-- College / Business Name -->
+    <div>
+      <label class="block text-gray-700 font-medium mb-1">College / Business Name</label>
+      <input id="bname" name="bname" type="text" placeholder="College / Business name" required
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+    </div>
+
+    <!-- Email -->
+    <div>
+      <label class="block text-gray-700 font-medium mb-1">Email</label>
+      <input id="email" name="email" type="email" placeholder="you@example.com" required
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+    </div>
+
+    <!-- Mobile -->
+    <div>
+      <label class="block text-gray-700 font-medium mb-1">Mobile Number</label>
+      <input id="phone" name="phone" type="tel" placeholder="10-digit mobile (e.g. 9876543210)" pattern="[0-9]{10}" maxlength="10" required
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+      <p class="text-sm text-gray-500 mt-1">OTP will be generated for demo and printed in console (testing only).</p>
+    </div>
+
+    <!-- Category -->
+    <div>
+      <label class="block text-gray-700 font-medium mb-1">Category</label>
+      <select id="interest" name="interest" required
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-700">
+        <option value="" disabled selected>Category</option>
+        <option value="learning">Learn with Forge</option>
+        <option value="building">Build with Forge</option>
+        <option value="mentoring">Join with Forge</option>
+      </select>
+    </div>
+
+    <!-- Message -->
+    <div>
+      <label class="block text-gray-700 font-medium mb-1">Message</label>
+      <textarea id="message" name="message" rows="4" placeholder="Your message..." required
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+    </div>
+
+    <!-- Buttons -->
+    <div class="flex flex-wrap gap-3 mt-2">
+      <button id="sendOtpBtn" type="button" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">Submit & Send OTP</button>
+      <button id="proceedPayBtn" type="button" class="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition hidden">Proceed to Pay</button>
+      <button id="resetBtn" type="button" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400 transition">Reset</button>
+    </div>
+
+    <!-- OTP UI -->
+    <div id="otpContainer" class="hidden mt-4 space-y-2">
+      <div class="flex justify-between items-center">
+        <div>
+          <strong class="text-gray-800">Enter OTP</strong>
+          <p class="text-sm text-gray-500" id="otpInstr">We sent a 6-digit OTP to your mobile. (Testing: OTP printed in console)</p>
+        </div>
+        <div id="otpStatus" class="text-sm text-right text-gray-600"></div>
+      </div>
+
+      <div class="flex gap-2 items-center">
+        <input id="otpInput" type="text" placeholder="6-digit OTP" maxlength="6"
+          class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+        <button id="verifyOtpBtn" type="button" class="bg-green-600 text-white px-3 py-2 rounded-lg font-semibold hover:bg-green-700 transition">Verify OTP</button>
+        <button id="resendBtn" type="button" class="bg-gray-300 text-gray-700 px-3 py-2 rounded-lg font-semibold hover:bg-gray-400 transition">Resend</button>
+      </div>
+
+      <p class="text-sm text-gray-500 mt-1">
+        Expires in <strong id="countdown">02:00</strong>
+      </p>
+    </div>
+  </form>
+</div>
+
+<!-- Invoice Overlay -->
+<div id="invoiceOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+  <div class="bg-white rounded-xl p-6 max-w-md w-full relative">
+    <span id="closeInvoice" class="absolute top-2 right-4 cursor-pointer font-bold text-xl">&times;</span>
+    <h2 class="text-xl font-bold mb-2">Invoice</h2>
+    <div id="invoiceContent" class="text-gray-800 text-sm"></div>
+    <!-- <button id="downloadInvoice" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Download PDF</button> -->
+  </div>
+</div>
+<div id="footer-placeholder"></div>
+
+<script>
+/* ---------------------------
+   Mock OTP + payment script
+   --------------------------- */
+
+(() => {
+  // Read course info from query params and show in the course field
+  const params = new URLSearchParams(window.location.search);
+  const courseNameFromQS = params.get('name') || 'Selected Course';
+  const coursePriceFromQS = parseInt(params.get('price')) || 100; // rupees fallback
+
+  document.getElementById('courseName').value = courseNameFromQS;
+
+  // DOM refs
+  const applyForm = document.getElementById('applyForm');
+  const sendOtpBtn = document.getElementById('sendOtpBtn');
+  const proceedPayBtn = document.getElementById('proceedPayBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const otpContainer = document.getElementById('otpContainer');
+  const otpInput = document.getElementById('otpInput');
+  const verifyOtpBtn = document.getElementById('verifyOtpBtn');
+  const resendBtn = document.getElementById('resendBtn');
+  const countdownEl = document.getElementById('countdown');
+  const otpStatus = document.getElementById('otpStatus');
+
+  // OTP state
+  let generatedOTP = null;
+  let otpExpiryTs = 0;
+  let countdownTimer = null;
+  let resendCooldownTimer = null;
+  const OTP_TTL_MS = 2 * 60 * 1000; // 2 minutes
+  const RESEND_COOLDOWN_MS = 30 * 1000; // 30 seconds
+
+  // Helpers
+  function pad2(n){ return n<10? '0'+n : ''+n; }
+  function startCountdown() {
+    clearInterval(countdownTimer);
+    countdownTimer = setInterval(()=>{
+      const remaining = Math.max(0, otpExpiryTs - Date.now());
+      const mm = Math.floor(remaining / 60000);
+      const ss = Math.floor((remaining % 60000) / 1000);
+      countdownEl.textContent = `${pad2(mm)}:${pad2(ss)}`;
+      if (remaining <= 0) {
+        clearInterval(countdownTimer);
+        otpStatus.textContent = 'OTP expired';
+        verifyOtpBtn.disabled = true;
+      }
+    }, 250);
+  }
+
+  function startResendCooldown() {
+    resendBtn.disabled = true;
+    let remaining = RESEND_COOLDOWN_MS;
+    resendBtn.textContent = 'Resend (' + Math.ceil(remaining/1000) + 's)';
+    resendCooldownTimer = setInterval(()=> {
+      remaining -= 1000;
+      if (remaining <= 0) {
+        clearInterval(resendCooldownTimer);
+        resendBtn.disabled = false;
+        resendBtn.textContent = 'Resend';
+        return;
+      }
+      resendBtn.textContent = 'Resend (' + Math.ceil(remaining/1000) + 's)';
+    }, 1000);
+  }
+
+  function generateAndShowOTP() {
+    generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+    otpExpiryTs = Date.now() + OTP_TTL_MS;
+    console.log('%c[MOCK OTP] Use this OTP for testing:', 'color:green;font-weight:bold', generatedOTP);
+    otpStatus.textContent = 'OTP sent';
+    otpInput.value = '';
+    verifyOtpBtn.disabled = false;
+    otpContainer.classList.remove('hidden');
+    startCountdown();
+    startResendCooldown();
+    // show small alert so testers notice (you may remove this in future)
+    alert('Mock OTP sent (for testing). Check browser console for OTP.');
+  }
+
+  // Send OTP (on button click)
+  sendOtpBtn.addEventListener('click', (ev) => {
+    // validate basic form fields before sending OTP
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const interest = document.getElementById('interest').value;
+
+    if (!name || !email || !phone || !interest) {
+      alert('Please fill all required fields before requesting OTP.');
+      return;
+    }
+    if (!/^\d{10}$/.test(phone)) {
+      alert('Please enter a valid 10-digit phone number.');
+      return;
+    }
+    // Generate mock OTP and show UI
+    generateAndShowOTP();
+
+    // keep sendOtpBtn disabled while OTP is active to prevent duplicates
+    sendOtpBtn.disabled = true;
+    sendOtpBtn.textContent = 'OTP Sent';
+
+  });
+
+  // Resend OTP
+  resendBtn.addEventListener('click', () => {
+    // only allow if disabled state ended
+    if (resendBtn.disabled) return;
+    generateAndShowOTP();
+  });
+
+  // Verify OTP
+  verifyOtpBtn.addEventListener('click', async () => {
+    const typed = (otpInput.value || '').trim();
+    if (!typed) { alert('Enter the OTP'); return; }
+    if (!generatedOTP) { alert('No OTP generated yet. Click Send OTP.'); return; }
+    if (Date.now() > otpExpiryTs) { alert('OTP expired. Please resend.'); return; }
+
+   if (typed === generatedOTP) {
+  clearInterval(countdownTimer);
+  otpStatus.textContent = 'Verified ✓';
+  verifyOtpBtn.disabled = true;
+  resendBtn.disabled = true;
+  otpInput.disabled = true;
+
+  // ✅ Post to Google Sheet
+// ✅ Post to Google Sheet (FormData way)
+try {
+  const formData = new FormData(applyForm);
+  formData.append("timestamp", new Date().toLocaleString()); 
+  const courseName = document.getElementById('courseName').value || "Not provided";
+   formData.append("course", courseName);
+
+  const resp = await fetch(
+    "https://script.google.com/macros/s/AKfycbzEkwnxYaGi0-DhOpFjg8E6Wi0vnRPy2h9j_5OfIhwGq1hPE0GztTRTelNwHkfHPK6f/exec",
+    {
+      method: "POST",
+      //headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: formData,
+    }
+  );
+
+
+
+  if (resp.status === 200) {
+    console.log("✅ Data sent to Google Sheets");
+    // now show Proceed to Pay button
+    proceedPayBtn.classList.remove("hidden");
+  } else {
+    alert("❌ Failed to submit data to Google Sheets");
+  }
+   proceedPayBtn.classList.remove("hidden");
+} catch (err) {
+  console.error("❌ Google Sheets error:", err);
+  alert("Error uploading to Google Sheets. Check console.");
+}
+
+   }
+ else {
+      alert('Invalid OTP — please try again.');
+    }
+  });
+  
+  // Reset form to initial state
+  resetBtn.addEventListener('click', ()=> {
+    // clear timers
+    clearInterval(countdownTimer);
+    clearInterval(resendCooldownTimer);
+    generatedOTP = null;
+    otpExpiryTs = 0;
+    otpContainer.classList.add('hidden');
+    otpInput.value = '';
+    otpInput.disabled = false;
+    verifyOtpBtn.disabled = false;
+    resendBtn.disabled = false;
+    sendOtpBtn.disabled = false;
+    sendOtpBtn.textContent = 'Submit & Send OTP';
+    proceedPayBtn.classList.add('hidden');
+    otpStatus.textContent = '';
+    countdownEl.textContent = '02:00';
+    // optionally clear form fields
+    // applyForm.reset();
+  });
+
+  // Proceed button (user may manually click)
+  proceedPayBtn.addEventListener('click', openRazorpayCheckout);
+
+  // Payment function: opens Razorpay Checkout (no backend order created here)
+  function openRazorpayCheckout() {
+    // gather form values
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+
+    if (!name || !email || !phone) {
+      alert('Missing user details — please fill the form.');
+      return;
+    }
+
+    const options = {
+      key: "rzp_test_RL9XyzhjRRghGr", // test key
+      amount: (coursePriceFromQS * 100), // amount in paise
+      currency: "INR",
+      name: "Student Forge",
+      description: courseNameFromQS,
+      prefill: { name, email, contact: phone },
+      // handler: function (response) {
+      //   // response.razorpay_payment_id, response.razorpay_signature (if order used),
+      //   // you should verify on server in production
+      //   console.log('Razorpay response', response);
+      //   alert('Payment successful! payment id: ' + response.razorpay_payment_id);
+      //   // Optionally: redirect to success page
+      //   // window.location.href = 'success.html?payment_id=' + response.razorpay_payment_id;
+      // },
+      handler: async function (response) {
+    console.log('Razorpay response', response);
+
+    const paymentId = response.razorpay_payment_id;
+    const timestamp = new Date().toISOString();
+
+    // Build invoice HTML
+    const invoiceHTML = `
+      <p><strong>Course:</strong> ${courseNameFromQS}</p>
+      <p><strong>Price:</strong> ₹${coursePriceFromQS}</p>
+      <p><strong>Name:</strong> ${document.getElementById('name').value}</p>
+      <p><strong>Email:</strong> ${document.getElementById('email').value}</p>
+      <p><strong>Phone:</strong> ${document.getElementById('phone').value}</p>
+      <p><strong>Timestamp:</strong> ${timestamp}</p>
+      <p><strong>Payment ID:</strong> ${paymentId}</p>
+    `;
+    document.getElementById('invoiceContent').innerHTML = invoiceHTML;
+    document.getElementById('invoiceOverlay').classList.remove('hidden');
+
+    // Close overlay
+    document.getElementById('closeInvoice').onclick = () => {
+      document.getElementById('invoiceOverlay').classList.add('hidden');
+    };
+
+    // Send to new Google Sheet
+    try {
+      const formData = new FormData();
+      // formData.append('name', document.getElementById('name').value);
+      // formData.append('phone', document.getElementById('phone').value);
+      // formData.append('paymentId', paymentId);
+      // formData.append('timestamp', timestamp);
+      formData.append('timestamp', timestamp);
+formData.append('course', courseNameFromQS);
+formData.append('price', coursePriceFromQS);
+formData.append('name', document.getElementById('name').value);
+formData.append('email', document.getElementById('email').value);
+formData.append('phone', document.getElementById('phone').value);
+formData.append('paymentId', paymentId);
+
+      const resp = await fetch('https://script.google.com/macros/s/AKfycbyaG3OIrsRulSa1bA75UexqdylgmOHorOA2wIAI4ApydyoesNOt9R1R_qP_pEg8esXO/exec', {
+        method: 'POST',
+        body: formData,
+        //mode: "no-cors"
+      });
+
+      if (resp.status === 200) console.log('✅ Invoice data sent to Google Sheet');
+      else console.warn('❌ Failed to send to Google Sheet');
+
+    } catch (err) {
+      console.error('Error sending to Google Sheet', err);
+    }
+},
+// After setting invoiceContent.innerHTML
+
+
+
+      theme: { color: "#003153" }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.open();
+  }
+
+function downloadInvoicePDF() {
+  const overlay = document.getElementById('invoiceOverlay');
+  const element = document.getElementById('invoiceContent');
+
+  // Make overlay and content visible temporarily
+  overlay.style.display = 'flex';
+  element.style.display = 'block';
+
+  // Give the DOM a tick to render
+  setTimeout(() => {
+    html2pdf()
+      .set({
+        margin: 0.5,
+        filename: `${courseNameFromQS}_Invoice.pdf`,
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      })
+      .from(element)
+      .save();
+  }, 100);
+}
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Load nav and footer only after whole DOM & Tailwind are ready
+    loadHTML("#nav-placeholder", "nav.html");
+    loadHTML("#footer-placeholder", "footer.html");
+});
+
+
+
+// document.getElementById('downloadInvoice').addEventListener('click', downloadInvoicePDF);
+
+function loadHTML(selector, file) {
+            fetch(file)
+                .then(response => {
+                    if (!response.ok) throw new Error(`Could not fetch ${file}`);
+                    return response.text();
+                })
+                .then(data => {
+                    document.querySelector(selector).innerHTML = data;
+
+                    // Re-run nav JS after loading nav dynamically
+                    if (selector === "#nav-placeholder") {
+                        const hamburger = document.getElementById('hamburger-menu');
+                        const mobileNav = document.getElementById('mobile-nav');
+                        if(hamburger && mobileNav) {
+                            hamburger.addEventListener('click', () => mobileNav.classList.toggle('open'));
+                            document.addEventListener('click', e => {
+                                if (!mobileNav.contains(e.target) && !hamburger.contains(e.target)) {
+                                    mobileNav.classList.remove('open');
+                                }
+                            });
+                        }
+
+                        // Highlight active link
+                        var links = document.querySelectorAll('.nav-zoom');
+                        var current = window.location.pathname.split('/').pop();
+                        links.forEach(link => {
+                            if(link.getAttribute('href') === current) link.classList.add('active');
+                        });
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+
+        // Load nav and footer
+        loadHTML("#nav-placeholder", "nav.html");
+        loadHTML("#footer-placeholder", "footer.html");
+
+})();
+
+</script>
+</body>
+</html>
